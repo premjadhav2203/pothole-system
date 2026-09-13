@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Road Watch — Pothole Detection & Reporting System
 
 A system that detects potholes from photos, tags them with location, timestamp,
@@ -119,3 +120,6 @@ Or use the "Report a pothole" form directly in the dashboard.
 
 See the attached screen recording for the full flow: submitting a photo →
 detection → dashboard update → automated report.
+=======
+# pothole-system
+>>>>>>> ab5fdf1d77f2f86e12478a9b753fd10375d11f37
