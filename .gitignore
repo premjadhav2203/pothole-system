@@ -3,5 +3,4 @@ venv/
 .env
 backend/uploads/*
 !backend/uploads/.gitkeep
-*.pt
 .DS_Store
