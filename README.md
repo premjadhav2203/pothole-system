@@ -69,6 +69,7 @@ cd backend
 npm install
 cp .env.example .env   # fill in DATABASE_URL, SMTP credentials, etc.
 node index.js
+curl http://localhost:4000/authorities
 ```
 
 ### 4. Frontend

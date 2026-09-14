@@ -61,6 +61,7 @@ app.get('/potholes', async (req, res) => {
   const params = [];
   if (status) { params.push(status); query += ` AND status = $${params.length}`; }
   if (severity) { params.push(severity); query += ` AND severity = $${params.length}`; }
+  if (req.query.authority_id) { params.push(req.query.authority_id); query += ` AND authority_id = $${params.length}`; }
   query += ' ORDER BY created_at DESC';
   const result = await pool.query(query, params);
   res.json(result.rows);
@@ -71,6 +72,12 @@ app.patch('/potholes/:id/status', async (req, res) => {
   await pool.query('UPDATE potholes SET status=$1 WHERE id=$2', [status, req.params.id]);
   await pool.query('INSERT INTO status_history (pothole_id, status) VALUES ($1,$2)', [req.params.id, status]);
   res.json({ ok: true });
+});
+
+
+app.get('/authorities', async (req, res) => {
+  const result = await pool.query('SELECT * FROM authorities ORDER BY name');
+  res.json(result.rows);
 });
 
 app.listen(4000, () => console.log('Backend running on port 4000'));

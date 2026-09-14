@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import axios from 'axios';
 import 'leaflet/dist/leaflet.css';
@@ -15,10 +15,12 @@ function UploadForm({ onUploaded }) {
   const [lat, setLat] = useState('18.5204');
   const [lng, setLng] = useState('73.8567');
   const [status, setStatus] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!file) { setStatus('Choose an image first.'); return; }
+    setSubmitting(true);
     setStatus('Uploading...');
     const form = new FormData();
     form.append('image', file);
@@ -34,6 +36,8 @@ function UploadForm({ onUploaded }) {
       }
     } catch (err) {
       setStatus('Upload failed — check the backend is running.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -45,7 +49,7 @@ function UploadForm({ onUploaded }) {
         <input type="number" step="any" value={lat} onChange={e => setLat(e.target.value)} placeholder="Latitude" />
         <input type="number" step="any" value={lng} onChange={e => setLng(e.target.value)} placeholder="Longitude" />
       </div>
-      <button type="submit">Submit</button>
+      <button type="submit" disabled={submitting}>{submitting ? 'Submitting…' : 'Submit'}</button>
       {status && <p className="upload-status">{status}</p>}
     </form>
   );
@@ -54,13 +58,36 @@ function UploadForm({ onUploaded }) {
 function App() {
   const [potholes, setPotholes] = useState([]);
   const [statusFilter, setStatusFilter] = useState('');
+  const [authorityFilter, setAuthorityFilter] = useState('');
+  const [authorities, setAuthorities] = useState([]);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const filtersRef = useRef({ statusFilter: '', authorityFilter: '' });
+
+  useEffect(() => {
+    axios.get('http://localhost:4000/authorities').then(res => setAuthorities(res.data));
+  }, []);
+
+  useEffect(() => {
+    filtersRef.current = { statusFilter, authorityFilter };
+  }, [statusFilter, authorityFilter]);
 
   const fetchPotholes = () => {
-    axios.get(`http://localhost:4000/potholes${statusFilter ? `?status=${statusFilter}` : ''}`)
-      .then(res => setPotholes(res.data));
+    const { statusFilter, authorityFilter } = filtersRef.current;
+    const params = new URLSearchParams();
+    if (statusFilter) params.append('status', statusFilter);
+    if (authorityFilter) params.append('authority_id', authorityFilter);
+    axios.get(`http://localhost:4000/potholes?${params.toString()}`)
+      .then(res => {
+        setPotholes(res.data);
+        setLastUpdated(new Date());
+      });
   };
 
-  useEffect(() => { fetchPotholes(); }, [statusFilter]);
+  useEffect(() => {
+    fetchPotholes();
+    const interval = setInterval(fetchPotholes, 5000);
+    return () => clearInterval(interval);
+  }, [statusFilter, authorityFilter]);
 
   const updateStatus = async (id, status) => {
     await axios.patch(`http://localhost:4000/potholes/${id}/status`, { status });
@@ -76,12 +103,21 @@ function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <h1>Road Watch</h1>
+        <div className="brand">
+          <h1>Road Watch</h1>
+          <span className="live-badge">
+            <span className="live-dot" />
+            Live
+          </span>
+        </div>
         <div className="stat-chips">
           {Object.entries(counts).map(([status, n]) => (
             <span key={status} className="chip">{status} <strong>{n}</strong></span>
           ))}
         </div>
+        {lastUpdated && (
+          <span className="updated-at">Updated {lastUpdated.toLocaleTimeString()}</span>
+        )}
       </header>
 
       <div className="body">
@@ -89,12 +125,20 @@ function App() {
           <UploadForm onUploaded={fetchPotholes} />
 
           <label className="filter-label" htmlFor="status-filter">Filter by status</label>
-          <select id="status-filter" className="filter-select" onChange={e => setStatusFilter(e.target.value)}>
+          <select id="status-filter" className="filter-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
             <option value="">All statuses</option>
             <option value="Reported">Reported</option>
             <option value="Acknowledged">Acknowledged</option>
             <option value="In Progress">In Progress</option>
             <option value="Resolved">Resolved</option>
+          </select>
+
+          <label className="filter-label" htmlFor="zone-filter" style={{ marginTop: 12 }}>Filter by zone</label>
+          <select id="zone-filter" className="filter-select" value={authorityFilter} onChange={e => setAuthorityFilter(e.target.value)}>
+            <option value="">All zones</option>
+            {authorities.map(a => (
+              <option key={a.id} value={a.id}>{a.name}</option>
+            ))}
           </select>
 
           {potholes.length === 0 && (
@@ -128,8 +172,11 @@ function App() {
         </aside>
 
         <div className="map-wrap">
-          <MapContainer center={[18.5204, 73.8567]} zoom={12} className="map">
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <MapContainer center={[18.5204, 73.8567]} zoom={13} className="map">
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
             {potholes.map(p => {
               const sev = SEVERITY[p.severity] || SEVERITY.Low;
               return (

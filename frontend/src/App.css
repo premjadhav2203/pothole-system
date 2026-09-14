@@ -25,11 +25,45 @@ body {
   flex-wrap: wrap;
 }
 
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .topbar h1 {
   font-size: 20px;
   font-weight: 600;
   margin: 0;
   letter-spacing: 0.2px;
+}
+
+.live-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #9FE6B0;
+  background: rgba(159, 230, 176, 0.12);
+  border: 1px solid rgba(159, 230, 176, 0.3);
+  border-radius: 20px;
+  padding: 3px 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ADE80;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.6); }
+  70% { box-shadow: 0 0 0 6px rgba(74, 222, 128, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
 }
 
 .stat-chips {
@@ -47,6 +81,13 @@ body {
 }
 
 .chip strong { margin-left: 4px; }
+
+.updated-at {
+  margin-left: auto;
+  font-size: 11px;
+  color: rgba(241, 239, 234, 0.55);
+  font-family: 'IBM Plex Mono', monospace;
+}
 
 .body {
   display: flex;
@@ -79,6 +120,11 @@ body {
   font-family: inherit;
   font-size: 13px;
   color: #1F2321;
+  transition: border-color 0.15s ease;
+}
+
+.filter-select:hover, .status-select:hover {
+  border-color: #2E4057;
 }
 
 .empty-state {
@@ -100,6 +146,12 @@ body {
   border-left: 4px solid;
   border-radius: 3px;
   padding: 10px 12px;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.ticket:hover {
+  box-shadow: 0 2px 8px rgba(31, 35, 33, 0.08);
+  transform: translateY(-1px);
 }
 
 .ticket-top {
@@ -135,6 +187,7 @@ body {
 .map {
   height: 100%;
   width: 100%;
+  background: #F1EFEA;
 }
 
 .legend {
@@ -149,6 +202,7 @@ body {
   display: flex;
   gap: 14px;
   font-size: 12px;
+  box-shadow: 0 2px 6px rgba(31, 35, 33, 0.08);
 }
 
 .legend-item {
@@ -198,10 +252,16 @@ body {
   padding: 8px;
   font-size: 13px;
   cursor: pointer;
+  transition: background 0.15s ease;
 }
 
-.upload-form button:hover {
+.upload-form button:hover:not(:disabled) {
   background: #26334A;
+}
+
+.upload-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .upload-status {
